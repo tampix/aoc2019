@@ -5,9 +5,48 @@
 
 
 (defn manhattan
-  ([p] (manhattan p [0 0]))
-  ([p1 p2]
-   (->> [p1 p2]
-        (apply map -)
-        (map #(Math/abs %))
-        (reduce +))))
+  [p]
+  (->> [p [0 0]]
+       (apply map -)
+       (map #(Math/abs %))
+       (reduce +)))
+
+(defn move-from
+  [point move]
+  (let [[x y] point
+        [direction & digits] move
+        length (Integer/parseInt (apply str digits) 10)]
+    (map #(condp = direction
+            \U [x (+ y %)]
+            \R [(+ x %) y]
+            \D [x (- y %)]
+            \L [(- x %) y])
+         (range length 0 -1))))
+
+(defn path->points
+  [path]
+  (reduce (fn [[last :as all] move]
+            (concat (move-from last move) all))
+          '([0 0])
+          path))
+
+(defn part1
+  []
+  (->> input
+       (map (comp set drop-last path->points))
+       (apply clojure.set/intersection)
+       (map manhattan)
+       (reduce min)))
+
+(defn part2
+  []
+  (let [wires (->> input
+                   (map (comp reverse drop-last path->points)))
+        crosses (->> wires
+                     (map set)
+                     (apply clojure.set/intersection))]
+    (->> crosses
+         (map #(+ 2
+                  (.indexOf (first wires) %)
+                  (.indexOf (second wires) %)))
+         (reduce min))))
